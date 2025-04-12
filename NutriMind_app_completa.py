@@ -304,8 +304,5 @@ if not df.empty:
             alimentos_semana.add(alimento.strip().lower())
 
     st.markdown(f"🌿 Esta semana has consumido **{len(alimentos_semana)} / 30** vegetales distintos.")
-
 else:
-    st.success(f"🎉 ¡Excelente! Has alcanzado {n_plantas} plantas distintas esta semana.")
-    with st.expander("Ver lista de plantas consumidas"):
-        st.write(", ".join(sorted(lista_plantas)))
+    st.info("Aún no hay datos registrados esta semana.")
