@@ -3,20 +3,10 @@ import pandas as pd
 import csv
 import os
 from datetime import datetime, timedelta
-from PIL import Image
 
 # --- Configuración de página ---
 st.set_page_config(page_title="NutriBioMind", layout="centered")
 st.title("🌱 La regla de oro para una microbiota saludable: 30 plantas por semana")
-
-# --- Logo ---
-logo = Image.open("logo.png")
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.image(logo, width=80)
-with col2:
-    st.markdown("## **NutriBiomind**")
-    st.markdown("#### 🌿 Tu guía hacia una microbiota saludable")
 
 # --- Alimentos por categorías ---
 categorias = {
