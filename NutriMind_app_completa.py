@@ -120,16 +120,14 @@ if os.path.exists(archivo_csv):
             alimentos = [a.strip().lower() for a in entrada.split(",")]
             alimentos_unicos.update(alimentos)
 
-        vegetales_consumidos = [v for v in alimentos_unicos if v in vegetales_validos]
-        progreso = len(set(vegetales_consumidos))
-        total = 30
-        bloques_llenos = "🟩" * progreso
-        bloques_vacios = "⬜" * (total - progreso)
+            vegetales_consumidos = [v for v in alimentos_unicos if v in vegetales_validos]
+            progreso = len(set(vegetales_consumidos))
+            total = 30
+            bloques_llenos = "🟩" * progreso
+            bloques_vacios = "⬜" * (total - progreso)
 
-        st.markdown(f"**{progreso}/30 vegetales únicos esta semana**")
-        st.markdown(f"{bloques_llenos}{bloques_vacios}")
-
-        st.markdown(f"🌿 Esta semana has consumido **{len(grupos_vegetales)} / 30** vegetales distintos.")
+            st.markdown(f"🌿 Esta semana has consumido **{progreso} / 30** vegetales diferentes.")
+            st.markdown(f"{bloques_llenos}{bloques_vacios}")
 else:
     st.info("Aún no hay datos registrados esta semana.")
          
