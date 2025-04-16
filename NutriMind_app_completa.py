@@ -56,51 +56,35 @@ if submitted:
     st.success("Daily record saved successfully!")
 
 # Weekly analysis of plant-based food diversity
-st.header("Weekly Plant-Based Diversity Analysis")
+st.header("🌿 Diversidad vegetal semanal")
 
-# Only perform analysis if the CSV file exists and has data
-if os.path.exists(file_path):
-    # Load the data
-    df = pd.read_csv(file_path, parse_dates=["fecha"])
-    if df.empty:
-        st.write("No data available yet. Add some records above!")
-    else:
-        # Ensure 'fecha' column is in date format (not just datetime64)
-        df['fecha'] = pd.to_datetime(df['fecha']).dt.date
-        
-        # Define the start date for the last 7 days window
-        one_week_ago = datetime.now().date() - timedelta(days=7)
-        
-        # Filter data for the last 7 days (including today)
-        last_week_data = df[df['fecha'] >= one_week_ago]
-        
-        if last_week_data.empty:
-            st.write("No data in the last week to analyze.")
-        else:
-            # Calculate diversity: number of unique plant-based categories in the last week
-            diversity_categories = set()
-            if "categories" in last_week_data.columns:
-                # If categories are stored in a single column as comma-separated string
-                for entry in last_week_data["categories"].dropna():
-                    if isinstance(entry, str):
-                        # Split the string by comma to get individual categories
-                        for cat in entry.split(","):
-                            cat = cat.strip()
-                            if cat:
-                                diversity_categories.add(cat)
-            else:
-                # If categories were stored in separate columns (e.g., one column per category)
-                possible_categories = ["Fruits", "Vegetables", "Legumes", "Whole Grains", "Nuts/Seeds", "Others"]
-                for cat_col in possible_categories:
-                    if cat_col in last_week_data.columns:
-                        # Count this category if any record in the last week has a positive value or True
-                        if last_week_data[cat_col].astype(bool).any():
-                            diversity_categories.add(cat_col)
-            
-            diversity_count = len(diversity_categories)
-            st.write(f"In the last 7 days, you have consumed from **{diversity_count}** different plant-based food categories.")
+if os.path.exists("data/habitos.csv"):
+    df = pd.read_csv("data/habitos.csv", encoding="utf-8-sig")
+    df.columns = ["fecha", "comida", "sueno", "ejercicio", "animo"] + list(categorias.keys())
+    df["fecha"] = pd.to_datetime(df["fecha"])
+
+    # Get start of the current week (Monday)
+    inicio_semana = datetime.now() - timedelta(days=datetime.now().weekday())
+    df_semana = df[df["fecha"] >= inicio_semana]
+
+    alimentos_unicos = set()
+    for entrada in df_semana["comida"].dropna():
+        alimentos = [a.strip().lower() for a in entrada.split(",")]
+        alimentos_unicos.update(alimentos)
+
+    # Filtrar por vegetales válidos (para no contar carnes, etc.)
+    vegetales_consumidos = [v for v in alimentos_unicos if v in vegetales_validos]
+    total = 30
+    progreso = len(set(vegetales_consumidos))
+
+    st.markdown(f"**{progreso}/30** vegetales únicos esta semana 🌱")
+    st.markdown("🟩" * progreso + "⬜" * (total - progreso))
+
+    if progreso < 30:
+        faltantes = total - progreso
+        st.info(f"¡Puedes sumar {faltantes} vegetales más esta semana! 💪")
 else:
-    st.write("No data recorded yet. Use the form above to add daily records.")
+    st.warning("Aún no hay datos para esta semana.")
 #show data
 if os.path.exists("data/habitos.csv"):
     st.subheader("📋 Registros guardados")
