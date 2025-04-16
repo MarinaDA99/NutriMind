@@ -132,7 +132,6 @@ if os.path.exists(archivo_csv):
         st.markdown(f"🌿 Esta semana has consumido **{len(grupos_vegetales)} / 30** vegetales distintos.")
             else:
                 st.info("Aún no hay datos registrados esta semana.")
-            else:
-                st.info("Aún no has guardado ningún registro.")
+         
 
 
