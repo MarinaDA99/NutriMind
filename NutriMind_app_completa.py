@@ -101,4 +101,8 @@ if os.path.exists(file_path):
             st.write(f"In the last 7 days, you have consumed from **{diversity_count}** different plant-based food categories.")
 else:
     st.write("No data recorded yet. Use the form above to add daily records.")
-
+#show data
+if os.path.exists("data/habitos.csv"):
+    st.subheader("📋 Registros guardados")
+    df = pd.read_csv("data/habitos.csv")
+    st.dataframe(df)
