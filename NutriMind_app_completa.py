@@ -1,92 +1,99 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta  # Added missing import for timedelta
+import csv
 import os
+from datetime import datetime, timedelta
+from PIL import Image
 
-# Ensure the data directory exists (for saving the CSV file)
-os.makedirs('data', exist_ok=True)
-file_path = 'data/habitos.csv'
+# --- Configuración de página ---
+st.set_page_config(page_title="NutriBioMind", layout="centered")
+st.title("🌱 La regla de oro para una microbiota saludable: 30 plantas por semana")
 
-# Title of the app
-st.title("Plant-Based Food Consumption Tracker")
+# --- Logo ---
+logo = Image.open("logo.png")
+col1, col2 = st.columns([1, 5])
+with col1:
+    st.image(logo, width=80)
+with col2:
+    st.markdown("## **NutriBiomind**")
+    st.markdown("#### 🌿 Tu guía hacia una microbiota saludable")
 
-# Form for daily input of food, sleep, mood, and exercise
-with st.form("daily_entry_form"):
-    st.header("Daily Entry")
-    # Date input (default to today); using this instead of a redefined 'fecha' outside
-    date_input = st.date_input("Fecha", value=datetime.now().date())
-    
-    # Multi-select for plant-based food categories consumed today
-    categories = st.multiselect(
-        "Plant-based food categories consumed today:",
-        ["Fruits", "Vegetables", "Legumes", "Whole Grains", "Nuts/Seeds", "Others"]
-    )
-    
-    # Numeric input for hours of sleep
-    sleep_hours = st.number_input("Hours of Sleep", min_value=0.0, max_value=24.0, value=8.0, step=0.5)
-    
-    # Slider or select slider for mood (1 to 5)
-    mood = st.select_slider("Mood (1 = lowest, 5 = highest)", options=[1, 2, 3, 4, 5], value=3)
-    
-    # Selectbox for exercise (Yes/No)
-    exercise = st.selectbox("Exercise today?", ["Yes", "No"])
-    
-    # Submit button for the form
-    submitted = st.form_submit_button("Save Daily Record")
+# --- Alimentos por categorías ---
+categorias = {
+    "🥦 Verduras y hortalizas": ["acelga", "apio", "berenjena", "brócoli", "calabacín", "calabaza", "cardo", "cebolla", "cebolleta", "col blanca", "col de Bruselas", "col lombarda", "col rizada (kale)", "coliflor", "endibia", "escarola", "espárrago", "espinaca", "hinojo", "judía verde", "lechuga romana", "lechuga iceberg", "nabo", "pepino", "pimiento rojo", "pimiento verde", "puerro", "rábano", "remolacha", "tomate", "zanahoria", "alcachofa", "chirivía", "boniato (batata)", "patata", "ñame", "taro", "malanga", "yuca", "okra", "pak choi", "berza", "acedera", "mostaza verde", "diente de león (hojas)", "berro", "canónigos", "mizuna", "tatsoi", "escarola rizada"],
+    "🍎 Frutas": ["manzana", "pera", "plátano", "naranja", "mandarina", "kiwi", "uva", "granada", "fresa", "frambuesa", "mora", "arándano", "cereza", "melocotón", "albaricoque", "ciruela", "mango", "papaya", "piña", "melón", "sandía", "higo", "caqui", "lichi", "maracuyá", "guayaba", "chirimoya", "carambola", "níspero", "pomelo", "lima", "limón", "coco", "aguacate", "tomate cherry", "grosella", "zarzamora", "mandarino", "plátano macho", "dátil"],
+    "🫘 Legumbres": ["lenteja", "garbanzo", "judía blanca", "judía roja", "judía negra", "habas", "guisantes", "soja", "azuki", "mungo", "lupino", "alubia pinta", "alubia canela", "alubia carilla", "alubia de Lima", "alubia de riñón", "alubia moteada", "alubia escarlata", "alubia borlotti", "alubia navy"],
+    "🌰 Frutos secos y semillas": ["almendra", "avellana", "nuez", "nuez de Brasil", "nuez de macadamia", "pistacho", "anacardo", "cacahuete", "pipa de girasol", "pipa de calabaza", "semilla de sésamo", "semilla de chía", "semilla de lino", "semilla de amapola", "semilla de cáñamo", "semilla de alcaravea", "semilla de hinojo", "semilla de mostaza", "semilla de albahaca", "semilla de comino", "semilla de coriandro", "semilla de anís", "semilla de cardamomo", "semilla de nigella", "semilla de fenogreco", "semilla de ajonjolí negro"],
+    "🌾 Cereales y pseudocereales": ["trigo integral", "avena", "cebada", "centeno", "arroz integral", "maíz", "quinoa", "amaranto", "mijo", "teff", "alforfón (trigo sarraceno)", "espelta", "kamut", "sorgo", "farro", "freekeh", "bulgur", "candeal", "arroz salvaje"]
+}
 
-# If the form is submitted, save the data to CSV
-if submitted:
-    # Prepare the new data record as a dictionary
-    categories_str = ", ".join(categories)  # join list of categories into a single string
-    new_record = {
-        "fecha": date_input,
-        "categories": categories_str,
-        "sleep_hours": sleep_hours,
-        "mood": mood,
-        "exercise": exercise
-    }
-    
-    # Convert the record to a DataFrame
-    df_new = pd.DataFrame([new_record])
-    # Append to CSV: write header only if file did not already exist
-    file_exists = os.path.isfile(file_path)
-    df_new.to_csv(file_path, mode='a', index=False, header=not file_exists)
-    
-    # Confirmation message
-    st.success("Daily record saved successfully!")
+# --- Set de vegetales válidos ---
+grupos_vegetales = ["🥦 Verduras y hortalizas", "🍎 Frutas", "🫘 Legumbres", "🌰 Frutos secos y semillas", "🌾 Cereales y pseudocereales"]
+vegetales_validos = set()
+for grupo in grupos_vegetales:
+    vegetales_validos.update([a.lower() for a in categorias[grupo]])
 
-# Weekly analysis of plant-based food diversity
-st.header("🌿 Diversidad vegetal semanal")
+# --- Lista completa de alimentos ---
+todos_alimentos = sorted({item for sublist in categorias.values() for item in sublist})
 
-if os.path.exists("data/habitos.csv"):
-    df = pd.read_csv("data/habitos.csv", encoding="utf-8-sig")
-    df.columns = ["fecha", "comida", "sueno", "ejercicio", "animo"] + list(categorias.keys())
-    df["fecha"] = pd.to_datetime(df["fecha"])
+# --- Formulario de registro ---
+with st.form("registro"):
+    st.subheader("📋 Registro diario")
 
-    # Get start of the current week (Monday)
-    inicio_semana = datetime.now() - timedelta(days=datetime.now().weekday())
-    df_semana = df[df["fecha"] >= inicio_semana]
+    seleccionados = st.multiselect("Selecciona los alimentos que comiste hoy:", options=todos_alimentos)
+    sueno = st.number_input("¿Cuántas horas dormiste?", min_value=0.0, max_value=24.0, step=0.5)
+    ejercicio = st.text_input("¿Ejercicio realizado (ej: 30 min caminata)?")
+    animo = st.slider("¿Cómo te sientes hoy?", 1, 5, 3)
+    submitted = st.form_submit_button("Guardar")
 
-    alimentos_unicos = set()
-    for entrada in df_semana["comida"].dropna():
-        alimentos = [a.strip().lower() for a in entrada.split(",")]
-        alimentos_unicos.update(alimentos)
+    if submitted:
+        fecha = datetime.now().strftime('%Y-%m-%d')
+        os.makedirs("data", exist_ok=True)
+        archivo_csv = "data/habitos.csv"
+        registro = [fecha, ", ".join(seleccionados), sueno, ejercicio, animo]
+        nuevo = not os.path.exists(archivo_csv)
 
-    # Filtrar por vegetales válidos (para no contar carnes, etc.)
-    vegetales_consumidos = [v for v in alimentos_unicos if v in vegetales_validos]
-    total = 30
-    progreso = len(set(vegetales_consumidos))
+        with open(archivo_csv, "a", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            if nuevo:
+                writer.writerow(["fecha", "comida", "sueno", "ejercicio", "animo"])
+            writer.writerow(registro)
 
-    st.markdown(f"**{progreso}/30** vegetales únicos esta semana 🌱")
-    st.markdown("🟩" * progreso + "⬜" * (total - progreso))
+        st.success("✅ Registro guardado correctamente.")
 
-    if progreso < 30:
-        faltantes = total - progreso
-        st.info(f"¡Puedes sumar {faltantes} vegetales más esta semana! 💪")
+# --- Análisis semanal de vegetales únicos ---
+st.markdown("---")
+st.subheader("🌿 Diversidad vegetal semanal")
+
+archivo_csv = "data/habitos.csv"
+if os.path.exists(archivo_csv):
+    df = pd.read_csv(archivo_csv, encoding="utf-8-sig")
+    if not df.empty:
+        df.columns = ["fecha", "comida", "sueno", "ejercicio", "animo"]
+        df["fecha"] = pd.to_datetime(df["fecha"])
+        inicio_semana = datetime.now() - timedelta(days=datetime.now().weekday())
+        df_semana = df[df["fecha"] >= inicio_semana]
+
+        alimentos_unicos = set()
+        for entrada in df_semana["comida"].dropna():
+            alimentos = [a.strip().lower() for a in entrada.split(",")]
+            alimentos_unicos.update(alimentos)
+
+        vegetales_consumidos = [v for v in alimentos_unicos if v in vegetales_validos]
+        progreso = len(set(vegetales_consumidos))
+        total = 30
+        bloques_llenos = "🟩" * progreso
+        bloques_vacios = "⬜" * (total - progreso)
+
+        st.markdown(f"**{progreso}/30 vegetales únicos esta semana**")
+        st.markdown(f"{bloques_llenos}{bloques_vacios}")
+
+        if progreso < total:
+            faltan = total - progreso
+            st.info(f"💡 Puedes sumar {faltan} vegetales distintos esta semana.")
+    else:
+        st.info("Aún no hay registros esta semana.")
 else:
-    st.warning("Aún no hay datos para esta semana.")
-#show data
-if os.path.exists("data/habitos.csv"):
-    st.subheader("📋 Registros guardados")
-    df = pd.read_csv("data/habitos.csv")
-    st.dataframe(df)
+    st.info("Aún no has guardado ningún registro.")
+
+
